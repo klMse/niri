@@ -1201,6 +1201,38 @@ pub struct Workspace {
     pub is_focused: bool,
     /// Id of the active window on this workspace, if any.
     pub active_window_id: Option<u64>,
+    /// Layout of this workspace
+    pub layout: Vec<Column>,
+}
+
+/// The layout of a workspace
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct WorkspaceLayout {
+    /// The id of the workspace
+    pub id: u64,
+    /// The layout
+    pub layout: Vec<Column>,
+}
+
+/// A single column of the layout
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct Column {
+    /// The ids of the windows
+    pub windows: Vec<Tile>,
+    /// The width of this column
+    pub width: i32,
+}
+
+/// A single tile in a column
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+pub struct Tile {
+    /// The id of the window
+    pub id: u64,
+    /// The height of the window
+    pub height: i32,
 }
 
 /// Configured keyboard layouts.
@@ -1291,6 +1323,13 @@ pub enum Event {
         workspace_id: u64,
         /// Id of the new active window, if any.
         active_window_id: Option<u64>,
+    },
+    /// The workspace layout configuration has changed
+    WorkspaceLayoutChanged {
+        /// The new workspace configuration
+        ///
+        /// Only workspaces which have changed will be included
+        layouts: Vec<WorkspaceLayout>,
     },
     /// The window configuration has changed.
     WindowsChanged {
