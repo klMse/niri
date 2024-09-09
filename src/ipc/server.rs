@@ -15,7 +15,10 @@ use futures_util::io::{AsyncReadExt, BufReader};
 use futures_util::{select_biased, AsyncBufReadExt, AsyncWrite, AsyncWriteExt, FutureExt as _};
 use niri_config::OutputName;
 use niri_ipc::state::{EventStreamState, EventStreamStatePart as _};
-use niri_ipc::{Event, KeyboardLayouts, OutputConfigChanged, Reply, Request, Response, Workspace};
+use niri_ipc::{
+    Event, KeyboardLayouts, OutputConfigChanged, Reply, Request, Response, Workspace,
+    WorkspaceLayout,
+};
 use smithay::reexports::calloop::generic::Generic;
 use smithay::reexports::calloop::{Interest, LoopHandle, Mode, PostAction};
 use smithay::reexports::rustix::fs::unlink;
@@ -23,7 +26,7 @@ use smithay::wayland::compositor::with_states;
 use smithay::wayland::shell::xdg::XdgToplevelSurfaceData;
 
 use crate::backend::IpcOutputMap;
-use crate::layout::workspace::WorkspaceId;
+use crate::layout::workspace::{self, WorkspaceId};
 use crate::niri::State;
 use crate::utils::version;
 use crate::window::Mapped;
@@ -380,6 +383,23 @@ fn make_ipc_window(mapped: &Mapped, workspace_id: Option<WorkspaceId>) -> niri_i
     })
 }
 
+fn make_ipc_layout(ws: &workspace::Workspace<Mapped>) -> Vec<niri_ipc::Column> {
+    ws.columns
+        .iter()
+        .map(|c| niri_ipc::Column {
+            windows: c
+                .tiles
+                .iter()
+                .map(|t| niri_ipc::Tile {
+                    id: t.window().id().get(),
+                    height: t.window().window.geometry().size.h,
+                })
+                .collect(),
+            width: c.tiles.first().unwrap().window().window.geometry().size.w,
+        })
+        .collect()
+}
+
 impl State {
     pub fn ipc_keyboard_layouts_changed(&mut self) {
         let keyboard = self.niri.seat.get_keyboard().unwrap();
@@ -513,11 +533,32 @@ impl State {
                         is_active: mon.map_or(false, |mon| mon.active_workspace_idx == ws_idx),
                         is_focused: Some(id) == focused_ws_id,
                         active_window_id: ws.active_window().map(|win| win.id().get()),
+                        layout: make_ipc_layout(ws),
                     }
                 })
                 .collect();
 
             events.push(Event::WorkspacesChanged { workspaces });
+        }
+
+        // Now collect layout changes if we didn't already send the full new workspace
+        if !need_workspaces_changed {
+            let mut layouts = Vec::new();
+            for (_, _, ws) in self.niri.layout.workspaces() {
+                let id = ws.id().get();
+                // We will only reach this point if `need_workspaces_changed` is false, ergo all ids exist
+                let ipc_ws = state.workspaces.get(&id).unwrap();
+                let current_layout = make_ipc_layout(ws);
+                if ipc_ws.layout != current_layout {
+                    layouts.push(WorkspaceLayout {
+                        id,
+                        layout: current_layout,
+                    });
+                }
+            }
+            if !layouts.is_empty() {
+                events.push(Event::WorkspaceLayoutChanged { layouts });
+            }
         }
 
         for event in events {
