@@ -91,6 +91,11 @@ impl EventStreamStatePart for WorkspacesState {
             Event::WorkspacesChanged { workspaces } => {
                 self.workspaces = workspaces.into_iter().map(|ws| (ws.id, ws)).collect();
             }
+            Event::WorkspaceLayoutChanged { layouts } => {
+                layouts
+                    .into_iter()
+                    .for_each(|l| self.workspaces.get_mut(&l.id).unwrap().layout = l.layout);
+            }
             Event::WorkspaceActivated { id, focused } => {
                 let ws = self.workspaces.get(&id);
                 let ws = ws.expect("activated workspace was missing from the map");

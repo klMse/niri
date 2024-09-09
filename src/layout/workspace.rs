@@ -378,6 +378,11 @@ impl<W: LayoutElement> Workspace<W> {
         self.tiles_mut().map(Tile::window_mut)
     }
 
+    pub fn columns(&self) -> impl Iterator<Item = &Column<W>> + '_ {
+        let scrolling = self.scrolling.columns();
+        scrolling
+    }
+
     pub fn tiles(&self) -> impl Iterator<Item = &Tile<W>> + '_ {
         let scrolling = self.scrolling.tiles();
         let floating = self.floating.tiles();

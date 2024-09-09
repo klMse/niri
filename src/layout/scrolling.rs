@@ -362,6 +362,10 @@ impl<W: LayoutElement> ScrollingSpace<W> {
         }
     }
 
+    pub fn columns(&self) -> impl Iterator<Item = &Column<W>> + '_ {
+        self.columns.iter()
+    }
+
     pub fn tiles(&self) -> impl Iterator<Item = &Tile<W>> + '_ {
         self.columns.iter().flat_map(|col| col.tiles.iter())
     }
@@ -3541,7 +3545,7 @@ impl<W: LayoutElement> Column<W> {
         }
     }
 
-    fn width(&self) -> f64 {
+    pub fn width(&self) -> f64 {
         self.data
             .iter()
             .map(|data| NotNan::new(data.size.w).unwrap())
