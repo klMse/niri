@@ -610,6 +610,10 @@ impl<W: LayoutElement> Workspace<W> {
         self.tiles_mut().map(Tile::window_mut)
     }
 
+    pub fn columns(&self) -> impl Iterator<Item = &Column<W>> + '_ {
+        self.columns.iter()
+    }
+
     pub fn tiles_mut(&mut self) -> impl Iterator<Item = &mut Tile<W>> + '_ {
         self.columns.iter_mut().flat_map(|col| col.tiles.iter_mut())
     }
@@ -3630,7 +3634,7 @@ impl<W: LayoutElement> Column<W> {
         }
     }
 
-    fn width(&self) -> f64 {
+    pub fn width(&self) -> f64 {
         self.data
             .iter()
             .map(|data| NotNan::new(data.size.w).unwrap())
@@ -4080,7 +4084,7 @@ impl<W: LayoutElement> Column<W> {
         iter::once(active_pos).chain(offsets)
     }
 
-    fn tiles(&self) -> impl Iterator<Item = (&Tile<W>, Point<f64, Logical>)> + '_ {
+    pub fn tiles(&self) -> impl Iterator<Item = (&Tile<W>, Point<f64, Logical>)> + '_ {
         let offsets = self.tile_offsets_iter(self.data.iter().copied());
         zip(&self.tiles, offsets)
     }
