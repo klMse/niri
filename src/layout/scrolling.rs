@@ -408,6 +408,10 @@ impl<W: LayoutElement> ScrollingSpace<W> {
         }
     }
 
+    pub fn columns(&self) -> impl Iterator<Item = &Column<W>> + '_ {
+        self.columns.iter()
+    }
+
     pub fn tiles(&self) -> impl Iterator<Item = &Tile<W>> + '_ {
         self.columns.iter().flat_map(|col| col.tiles.iter())
     }
@@ -2332,10 +2336,6 @@ impl<W: LayoutElement> ScrollingSpace<W> {
             .enumerate()
             .filter_map(move |(idx, pos)| (idx != active_idx).then_some(pos));
         iter::once(active_pos).chain(offsets)
-    }
-
-    pub fn columns(&self) -> impl Iterator<Item = &Column<W>> {
-        self.columns.iter()
     }
 
     fn columns_mut(&mut self) -> impl Iterator<Item = (&mut Column<W>, f64)> + '_ {
@@ -4699,7 +4699,7 @@ impl<W: LayoutElement> Column<W> {
         }
     }
 
-    fn width(&self) -> f64 {
+    pub fn width(&self) -> f64 {
         let mut tiles_width = self
             .data
             .iter()

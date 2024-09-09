@@ -496,6 +496,9 @@ pub fn handle_msg(mut msg: Msg, json: bool) -> anyhow::Result<()> {
                         let description = parts.join(" and ");
                         println!("Screenshot captured: {description}");
                     }
+                    Event::WorkspaceLayoutChanged { layouts } => {
+                        println!("Workspace layout changed: {layouts:?}")
+                    }
                 }
             }
         }
